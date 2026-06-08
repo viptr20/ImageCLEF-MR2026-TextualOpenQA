@@ -2,6 +2,9 @@
 
 This is a Tiny-category baseline solution for the **Textual OpenQA** track of ImageCLEF 2026 MultimodalReasoning using `google/mt5-base`.[page:1][web:20]
 
+Google Colab Notebook: https://colab.research.google.com/drive/1Dyk85tYyDgukPSCm9InZsCJMwQJg9Gox?usp=sharing 
+Github repo: https://github.com/viptr20/ImageCLEF-MR2026-TextualOpenQA
+
 ## 1. Setup
 
 ```bash
