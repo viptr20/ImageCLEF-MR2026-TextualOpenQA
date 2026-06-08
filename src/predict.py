@@ -6,6 +6,7 @@ from datasets import load_dataset
 import torch
 
 from .data_utils import LANG_TAG_PREFIX
+from .ocr_utils import ocr_image_to_text
 
 
 def parse_args():
@@ -52,19 +53,38 @@ def parse_args():
     return parser.parse_args()
 
 
+def build_prompt(ex):
+    lang = ex["language"]
+    subject = ex.get("subject", "")
+    image = ex.get("image", None)
+
+    question_text = ""
+    if image is not None:
+        try:
+            question_text = ocr_image_to_text(image)
+        except Exception:
+            question_text = ""
+
+    parts = [f"{LANG_TAG_PREFIX} {lang}"]
+    if subject:
+        parts.append(f"subject: {subject}")
+    if question_text:
+        parts.append(f"question: {question_text}")
+    parts.append("answer:")
+
+    return " ".join(parts)
+
+
 def main():
     args = parse_args()
 
-    # Load fine-tuned model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.model_dir, use_fast=True)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.model_dir)
     model.eval()
 
-    # Load dataset split
     ds = load_dataset(args.dataset_name)
     split = args.split
     if split not in ds:
-        # handle dev/validation aliasing if needed
         if split == "dev" and "validation" in ds:
             split = "validation"
         elif split == "validation" and "dev" in ds:
@@ -74,20 +94,8 @@ def main():
     predictions = []
 
     for ex in data:
-        # Dataset schema:
-        # {'question_id', 'answer', 'type', 'subject', 'language', 'image'}
-        lang = ex["language"]
-        subject = ex.get("subject", "")
         qid = ex.get("question_id", ex.get("id"))
-
-        # Construct a simple textual prompt from language + subject
-        # Since there is no 'question' text here, this is the best we can do.
-        # Example: "lang: Bulgarian subject: History answer:"
-        prompt_parts = [f"{LANG_TAG_PREFIX} {lang}"]
-        if subject:
-            prompt_parts.append(f"subject: {subject}")
-        prompt_parts.append("answer:")
-        input_text = " ".join(prompt_parts)
+        input_text = build_prompt(ex)
 
         inputs = tokenizer(
             input_text,
@@ -105,7 +113,8 @@ def main():
             )
 
         answer_text = tokenizer.decode(
-            generated[0], skip_special_tokens=True
+            generated[0],
+            skip_special_tokens=True,
         ).strip()
 
         predictions.append(
@@ -115,7 +124,6 @@ def main():
             }
         )
 
-    # Write submission-style JSON
     with open(args.output_path, "w", encoding="utf-8") as f:
         json.dump(predictions, f, ensure_ascii=False, indent=2)
 

@@ -4,3 +4,4 @@ evaluate>=0.4.1
 sentencepiece
 pyyaml
 torch
+easyocr

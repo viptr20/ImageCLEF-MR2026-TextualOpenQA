@@ -3,7 +3,7 @@ run_name: "mt5_base_textual_openqa_baseline"
 output_dir: "outputs/mt5_base"
 
 dataset_name: "SU-FMI-AI/ImageCLEF-MR2026-OpenQA-Textual"
-text_field_question: "question"
+text_field_question: ""
 text_field_answer: "answer"
 id_field: "id"
 language_field: "language"
